@@ -1,0 +1,16 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: fastx-service
+  labels:
+    app: fastx
+spec:
+  selector:
+    app: fastx
+  type: LoadBalancer
+
+  ports:
+  - name:  service name
+    port:  8080
+    targetPort: 8080
+    protocol: TCP
