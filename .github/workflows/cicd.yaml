@@ -5,7 +5,7 @@ on:
         branches: ['main']
 env:
     ECR_REPO: fastx-repo
-    EKS_CLUSTER: 
+    EKS_CLUSTER: fastx-cluster
     AWS_REGION: us-east-2
 jobs:
     build:
@@ -14,10 +14,17 @@ jobs:
         steps:
             - name: checkout version
               uses: actions/checkout@v2
+
+            - name: install kubectl
+              uses: azure/setup-kubectl@v2.0
+              id: install
+              with:
+                version: "v1.24.0"
+                
             - name: configure aws credentials
               uses: aws-actions/configure-aws-credentials@v1
               with:
-                aws-access-key-id: ${{secrets.AWS-ACCESS-KEY-ID}}
+                aws-access-key-id: ${{secrets.AWS-ACCESS-KEY}}
                 aws-secret-access-key: ${{secrets.AWS-SECRET-ACCESS-KEY}}
                 aws-region: ${{env.AWS_REGION}}
             - name: login ecr
@@ -29,18 +36,17 @@ jobs:
                 ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}        
                 IMAGE_TAG: ${{ steps.commit.outputs.short }}
               run: |
-                docker build -t $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG -f docks/Dockerfile .
-                docker push $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG
+                docker build -t $ECR_REGISTRY/$ECR_REPO:$IMAGE_TAG -f docks/Dockerfile .
+                docker push $ECR_REGISTRY/$ECR_REPO:$IMAGE_TAG
         
             - name: Update kube config
-              run: aws eks update-kubeconfig --name $EKS_CLUSTER_NAME --region $AWS_REGION
+              run: aws eks update-kubeconfig --name $EKS_CLUSTER --region $AWS_REGION
         
             - name: Deploy to EKS
               env:
                 ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}        
                 IMAGE_TAG: ${{ steps.commit.outputs.short }}
               run: |
-                sed -i.bak "s|DOCKER_IMAGE|$ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG|g" manifests/deployment.yaml && \
                 kubectl apply -f manifests/deployment.yaml
                 kubectl apply -f manifests/service.yaml
 

@@ -15,7 +15,7 @@ spec:
     spec:
       containers:
         - name: fastx
-          image: 043309334765.dkr.ecr.us-east-2.amazonaws.com/fastx-repo
+          image: 043309334765.dkr.ecr.us-east-2.amazonaws.com/fastx:latest
           imagePullPolicy: Always
           ports:
             - containerPort: 8080
