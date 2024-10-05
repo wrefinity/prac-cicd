@@ -1,52 +1,47 @@
 name: deployment
 
 on:
-    push:
-        branches: ['main']
-env:
-    ECR_REPO: fastx-repo
-    EKS_CLUSTER: fastx-cluster
-    AWS_REGION: us-east-2
+  push:
+    branches: ["main"]
+  pull_request:
+    branches: ["main"]
+
 jobs:
-    build:
-        name: deployments
-        runs-on: ubuntu-latest
-        steps:
-            - name: checkout version
-              uses: actions/checkout@v2
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: checkout code
+        uses: actions/checkout@v3
 
-            - name: install kubectl
-              uses: azure/setup-kubectl@v2.0
-              id: install
-              with:
-                version: "v1.24.0"
-                
-            - name: configure aws credentials
-              uses: aws-actions/configure-aws-credentials@v1
-              with:
-                aws-access-key-id: ${{ secrets.AWS-ACCESS-KEY }}
-                aws-secret-access-key: ${{ secrets.AWS-SECRET-ACCESS-KEY }}
-                aws-region: ${{ env.AWS_REGION }}
-            - name: login ecr
-              id: login-ecr
-              uses: aws-actions/amazon-ecr-login@v1
+      - name: install kubectl
+        uses: azure/setup-kubectl@v2.0
+        id: install 
+        with:
+          version: "v1.24.0"
+      - name: configure aws credentials
+        uses: aws-actions/configure-aws-credentials@v1
+        with:
+          aws-access-key-id: ${{secrets.AWS-ACCESS-KEY}}
+          aws-secret-access-key: ${{secrets.AWS-SECRET-ACCESS-KEY}}
+          aws-region: ${{secrets.AWS_REGION}}
+      - name: login to Amazon ECR
+        uses: aws-actions/amazon-ecr-login@v1
+      - name: build, tag, push docker image to Amazon ECR
+        env:
+          REGISTRY: ${{ steps.login-ecr.outputs.registry }}   
+          REPOSITORY:  fastx-repo
+          IMAGE_TAG: latest
+        run: |
+          docker build -t $REGISTRY/$REPOSITORY:$IMAGE_TAG .
+          docker push $REGISTRY/$REPOSITORY:$IMAGE_TAG
+      
+      - name: Update kube config
+        run: aws eks update-kubeconfig --name $EKS_CLUSTER  --region ${{ secrets.AWS_REGION }}
 
-            - name: Build, tag, and push image to Amazon ECR
-              env:
-                ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}        
-                IMAGE_TAG: ${{ steps.commit.outputs.short }}
-              run: |
-                docker build -t $ECR_REGISTRY/$ECR_REPO:$IMAGE_TAG -f docks/Dockerfile .
-                docker push $ECR_REGISTRY/$ECR_REPO:$IMAGE_TAG
-        
-            - name: Update kube config
-              run: aws eks update-kubeconfig --name $EKS_CLUSTER --region $AWS_REGION
-        
-            - name: Deploy to EKS
-              env:
-                ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}        
-                IMAGE_TAG: ${{ steps.commit.outputs.short }}
-              run: |
-                kubectl apply -f manifests/deployment.yaml
-                kubectl apply -f manifests/service.yaml
-
+      - name: Deploy to EKS
+        env:
+          ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
+          IMAGE_TAG: latest
+        run: |
+          kubectl apply -f manifests/deployment.yaml
+          kubectl apply -f manifests/service.yaml
