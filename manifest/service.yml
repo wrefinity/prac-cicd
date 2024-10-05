@@ -8,10 +8,9 @@ spec:
   selector:
     app: fastx
   type: LoadBalancer
-
   ports:
-  - name:  service name
-    port:  8080
-    targetPort: 8080
-    nodePort: 30090
-    protocol: TCP
+    - name: service name
+      port: 80
+      targetPort: 8080
+      nodePort: 30090
+      protocol: TCP
