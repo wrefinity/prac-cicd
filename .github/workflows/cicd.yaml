@@ -30,7 +30,7 @@ jobs:
         env:
           # REGISTRY: ${{ steps.login-ecr.outputs.registry }}   
           REGISTRY: 043309334765.dkr.ecr.us-east-2.amazonaws.com    
-          REPOSITORY:  fastx-repo
+          REPOSITORY:  fastx
           IMAGE_TAG: latest
         run: |
           docker build -t $REGISTRY/$REPOSITORY:$IMAGE_TAG  -f ./docks/Dockerfile .
