@@ -37,7 +37,7 @@ jobs:
           docker push $REGISTRY/$REPOSITORY:$IMAGE_TAG
       
       - name: Update kube config
-        run: aws eks update-kubeconfig --name $EKS_CLUSTER  --region ${{ secrets.AWS_REGION }}
+        run: aws eks update-kubeconfig --name fastx-cluster  --region ${{ secrets.AWS_REGION }}
 
       - name: Deploy to EKS
         env:
