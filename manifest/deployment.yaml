@@ -10,8 +10,9 @@ spec:
     matchLabels:
       app: fastx
   template:
-    labels:
-      app: fastx
+    metadata:
+      labels:
+        app: fastx
     spec:
       containers:
         - name: fastx
@@ -26,8 +27,8 @@ spec:
             limits:
               cpu: 100m
               memory: 100Mi
-    strategy:
-      type: RollingUpdate
-      rollingUpdate:
-        maxSurge: 1
-        maxUnavailable: 1
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 1
